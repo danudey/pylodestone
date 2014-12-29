@@ -34,6 +34,7 @@ class FreeCompany(object):
     self.__parse_url()
     self.__parse_header()
     self.__parse_tables()
+    self.__parse_estate()
 
   def __repr__(self):
     return "<FreeCompany {name} <{tag}> ({server})>".format(name=self.name, tag=self.tag, server=self.server)
@@ -53,9 +54,15 @@ class FreeCompany(object):
     self.__parse_recruitment()
     self.__parse_gc_tag()
     self.__parse_gc_name()
-    self.__parse_estate_name()
-    self.__parse_estate_address()
-    self.__parse_estate_greeting()
+  
+  def __parse_estate(self):
+    try:
+      self.__check_estate()
+      self.__parse_estate_name()
+      self.__parse_estate_address()
+      self.__parse_estate_greeting()
+    except ValueError:
+      pass
 
   def __extract_text(self, xpath):
     return [m for m in map(lambda x: x.strip().strip(u"<>()\xc2\xab\xc2\xbb"), self.html_obj.xpath(xpath)) if m]
@@ -134,6 +141,14 @@ class FreeCompany(object):
     greeting = self.__extract_text("//table[@class='table_style2']/tr[11]/td/p[@class='mb10'][2]/text()")
     self.estate_greeting = ' '.join(greeting)
 
+  def __check_estate(self):
+    """
+    check to see if there's an estate at all
+    """
+    data, = self.__extract_text("//table[@class='table_style2']/tr[11]/td/text()")
+    if data == u'No Estate or Plot':
+      raise ValueError("No estate or plot")
+
   @classmethod
   def fromLodestoneHTML(cls, html):
     html_obj = lxml.html.fromstring(html)
@@ -145,10 +160,3 @@ class FreeCompany(object):
     response = requests.get(url)
     if response.status_code == 200:
       return cls.fromLodestoneHTML(response.text)
-
-data = file("/tmp/htmlfile.html").read()
-
-#fc = FreeCompany.fromLodestoneHTML(data)
-fc = FreeCompany.fromLodestoneURL('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621161987/')
-
-print fc
