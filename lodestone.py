@@ -5,8 +5,11 @@ class LodestoneObject(object):
   def __init__(self, html_obj):
     self.html_obj = html_obj
 
+  def _clean_xpath(self, htmlobj, xpath):
+    return [m for m in map(lambda x: x.strip().strip(self.STRIPCHARS), htmlobj.xpath(xpath)) if m]
+
   def _extract_text(self, xpath):
-    return [m for m in map(lambda x: x.strip().strip(self.STRIPCHARS), self.html_obj.xpath(xpath)) if m]
+    return self._clean_xpath(self.html_obj, xpath)
 
   def _extract_attr(self, xpath, attr):
     return self.html_obj.xpath(xpath)
