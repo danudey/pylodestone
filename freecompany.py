@@ -13,6 +13,7 @@ from lxml.html.clean import clean_html
 
 # Our libraries
 import lodestone
+from utils import url_to_html_obj, xpath_from_url
 
 # Official FFXIV North American timezone is PST
 TIMEZONE = "America/Los_Angeles"
@@ -36,17 +37,39 @@ class FreeCompany(lodestone.LodestoneObject):
     self.seeking = None
     self.active_times = None
     self.recruitment = None
-  
+
     self.estate_name = None
     self.estate_address = None
     self.estate_greeting = None
+
+    self.member_list = []
     
     self.html_obj = html_obj
-    
+
     self.__parse_url()
     self.__parse_header()
     self.__parse_tables()
     self.__parse_estate()
+
+  @property
+  def members(self):
+    if self.member_list:
+      return self.member_list
+    else:
+      self.memberslisthtml = self.__get_member_list()
+      return self.member_list
+
+  def __get_member_list(self):
+    base_members_url = self.url + "/member/?page=1"
+    members_html_obj = url_to_html_obj(base_members_url)
+    members_urls = list(set(members_html_obj.xpath("//div[@class='pagination clearfix']//a/@href")))
+
+    for members_url in members_urls:
+      print "Processing members url %s" % members_url
+      members_obj = url_to_html_obj(members_url)
+      for player in members_obj.xpath("//div[@class='player_name_area']"):
+        data = self._clean_xpath(player,"h4/div/a/text() | h4/div/a/@href | div/text()")
+        self.member_list.append(dict(zip(("url","name","rank"),data)))
 
   def __repr__(self):
     return "<FreeCompany {name} <{tag}> ({server})>".format(name=self.name, tag=self.tag, server=self.server)
