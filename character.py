@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # Standard library
 import sys
@@ -26,12 +27,30 @@ class Character(lodestone.LodestoneObject):
     self.species = None
     self.race = None
     self.gender = None
+
+    self.city_state = None
     self.grand_company = None
+    self.grand_company_rank = None
     self.free_company = None
+
+    self.nameday = None
+    self.guardian = None
 
     self.levels = {}
     
     self.__parse_classes()
+    self.__parse_character()
+
+  def __parse_character(self):
+    self.guardian, self.nameday = self.html_obj.xpath("//dd/div/dl/*/text()")[1::2]
+    self.city_state, self.free_company = self.html_obj.xpath("//dd[5]/text()|//dd[9]/a/text()")
+    self.grand_company, self.grand_company_rank = self.html_obj.xpath("//dd[7]/text()")[0].split("/")
+    self.title = self.html_obj.xpath("//div[@class='chara_title']/text()")[0]
+    self.species, self.race, gender = self.html_obj.xpath("//div[@class='chara_profile_title']/text()")[0].split(" / ")
+    if gender == u'♀':
+      self.gender = "Female"
+    else:
+      self.gender = "Male"
 
   def __parse_classes(self):
     class_data = map(str.strip,self.html_obj.xpath("//table[@class='class_list']/tr/td/text()"))
